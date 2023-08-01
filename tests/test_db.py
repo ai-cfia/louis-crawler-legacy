@@ -4,9 +4,6 @@ import louis.crawler.items as items
 
 import time
 
-import numpy as np
-
-
 import louis.db as db
 
 class TestDBLayer(unittest.TestCase):

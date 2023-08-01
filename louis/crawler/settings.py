@@ -1,5 +1,4 @@
 """Scrapy settings for louis project."""
-import os
 import dotenv
 
 dotenv.load_dotenv()

@@ -1,5 +1,3 @@
-import re
-import time
 import scrapy
 from bs4 import BeautifulSoup, Comment
 

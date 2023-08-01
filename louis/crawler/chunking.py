@@ -95,7 +95,7 @@ def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
 
     # TODO: smarter sentence bin packing
     # total_count = sum(c['token_count'] for c in sentence_chunks)
-    # target_bucket_size = estimate_best_bucket_size(total_count, min_tokens, max_tokens)
+    # target_bucket_size = estimate_best_bucket_size(total_count, min_tokens, max_tokens)  # noqa: E501
 
     target_bucket_size = 409
     buckets = [[]]
