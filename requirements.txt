@@ -21,8 +21,7 @@ iniconfig==2.0.0
 itemadapter==0.8.0
 itemloaders==1.1.0
 jmespath==1.0.1
-louis-db @ file:///workspaces/louis-crawler/louis_db-0.0.5-py3-none-any.whl#sha256=ff599e756c62713ae7515822976fb1800c7030b1a67de2387a33e410499811f8
-louis-db-rngadam @ git+https://github.com/ai-cfia/louis-db@6f6e3b990496116bdea9e4523646356c30e7c55b
+louis-db @ git+https://github.com/ai-cfia/louis-db@33c3161f859df28a496efb3f22c21a0a0a93919c
 lxml==4.9.3
 multidict==6.0.4
 numpy==1.25.1
