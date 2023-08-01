@@ -7,7 +7,8 @@ from scrapy import signals
 
 from urllib.parse import urlparse
 
-from louis.crawler.responses import fake_response_from_file, response_from_crawl, response_from_chunk_token
+from louis.crawler.responses import (
+    fake_response_from_file, response_from_crawl, response_from_chunk_token)
 
 import louis.db as db
 
@@ -81,7 +82,9 @@ class LouisDownloaderMiddleware:
                     source_url = request.headers['Referer'].decode('utf-8')
                     destination_url = request.url
                     db.link_pages(cursor, source_url, destination_url)
-            return fake_response_from_file('/workspaces/louis-crawler/Cache' + parsed.path, request.url)
+            return fake_response_from_file(
+                '/workspaces/louis-crawler/Cache' + parsed.path,
+                request.url)
 
         if spider.name == 'hawn':
             with db.cursor(self.connection) as cursor:

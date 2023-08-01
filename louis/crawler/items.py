@@ -32,4 +32,4 @@ class EmbeddingItem(scrapy.Item):
 
     def __repr__(self):
         """Return a string representation of the item"""
-        return f"EmbeddingItem(token_id={self['token_id']}, embedding_model={self['embedding_model']})"
+        return f"EmbeddingItem(token_id={self['token_id']}, embedding_model={self['embedding_model']})"  # noqa: E501

@@ -40,12 +40,12 @@ class TestGoldie(unittest.TestCase):
         results = self._test_item_results(results, 1)
         self.assertEqual(
             results[0]["title"],
-            "Enforcement of the Safe Food for Canadians Regulations - Canadian Food Inspection Agency",
+            "Enforcement of the Safe Food for Canadians Regulations - Canadian Food Inspection Agency",  # noqa: E501
         )
         self.assertEqual(results[0]["url"], url)
         self.assertTrue(
             results[0]["html_content"].startswith(
-                '<html><body><main class="container" property="mainContentOfPage" typeof="WebPageElement"> <h1 id="wb-cont" property="name">Enforcement of the <i>Safe Food for Canadians Regulations</i>'
+                '<html><body><main class="container" property="mainContentOfPage" typeof="WebPageElement"> <h1 id="wb-cont" property="name">Enforcement of the <i>Safe Food for Canadians Regulations</i>'  # noqa: E501
             )
         )
 
@@ -68,11 +68,11 @@ class TestGoldie(unittest.TestCase):
             text_content,
             [
                 "Organizational structure",
-                "The Canadian Food Inspection Agency (CFIA) is led by its President, who reports to the Minister of Health. The CFIA has an integrated governance structure whereby all branch heads have specific accountabilities that contribute to the achievement of each of the CFIA's strategic objectives.",
+                "The Canadian Food Inspection Agency (CFIA) is led by its President, who reports to the Minister of Health. The CFIA has an integrated governance structure whereby all branch heads have specific accountabilities that contribute to the achievement of each of the CFIA's strategic objectives.",  # noqa: E501
                 "President",
                 "Executive Vice-President",
                 "Chief officers",
-                "Chief Veterinary Officer and Delegate to the World Organisation for Animal Health",
+                "Chief Veterinary Officer and Delegate to the World Organisation for Animal Health",  # noqa: E501
                 "Chief Food Safety Officer",
                 "Chief Plant Health Officer",
                 "Chief Science Operating Officer and Science Integrity Lead",
@@ -81,7 +81,7 @@ class TestGoldie(unittest.TestCase):
                 "Ministerial mandate letters",
                 "Minister of Health mandate letter",
                 "Minister of Agriculture and Agri-Food mandate letter",
-                "Minister of Innovation, Science and Economic Development mandate letter",
+                "Minister of Innovation, Science and Economic Development mandate letter",  # noqa: E501
             ],
         )
 

@@ -37,7 +37,9 @@ def clean(response):
     main.css('.alert').drop()
     soup = BeautifulSoup(main.get(), "lxml")
     # remove comments
-    _ignored = [c.extract() for c in soup.findAll(string=lambda text:isinstance(text, Comment))]
+    _ignored = [
+        c.extract() for c in soup.findAll(
+            string=lambda text:isinstance(text, Comment))]
     content = str(soup)
     return re.sub(r'\s+', ' ', content).strip()
 

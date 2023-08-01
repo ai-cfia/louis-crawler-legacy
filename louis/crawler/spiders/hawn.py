@@ -1,5 +1,4 @@
 import scrapy
-from bs4 import BeautifulSoup, Comment
 
 from louis.crawler.items import ChunkItem
 from louis.crawler.requests import extract_urls

@@ -118,7 +118,8 @@ def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
     return smaller_chunks
 
 def collect_chunks_from_block(block, total_token_count, chunks):
-    """Collect chunks of text, starting from a block, until the total token count is at most 512"""
+    """Collect chunks of text, starting from a block, 
+       until the total token count is at most 512"""
     if 'processed' not in block.attrs:
         chunk = compute_tokens(block)
         prospective_total = total_token_count + int(chunk['token_count'])
@@ -155,7 +156,8 @@ def collect_chunks_from_block(block, total_token_count, chunks):
     return
 
 def group_heading_by_block(soup):
-    """Wrap each heading and its siblings into a div, including other heading of a higher level"""
+    """Wrap each heading and its siblings into a div,
+       including other heading of a higher level"""
     body = soup.select('body')[0]
     body.attrs['class'] = body.attrs.get('class', []) + ["blocks", "h0-block"]
     if soup.title:
@@ -163,9 +165,11 @@ def group_heading_by_block(soup):
 
     parent_div = None
 
-    # we unwrap additional tags around headers where the header is alone in the wrapping tag
+    # we unwrap additional tags around headers where the header 
+    # is alone in the wrapping tag
     for block in list(soup.find_all(HEADERS_RE)):
-        if not HEADERS_RE.match(block.parent.name) and len(block.find_next_siblings()) == 0:
+        if (not HEADERS_RE.match(block.parent.name) 
+            and len(block.find_next_siblings()) == 0):
             # example of this is a <summary><h1>...</h1></summary>
             block.parent.unwrap()
 
@@ -248,7 +252,9 @@ def segment_blocks_into_chunks(blocks):
 def chunk_html(html_content):
     """Chunk an HTML document into a list of chunks.
 
-     chunks are made up of a title, and a body (which is a list of subheadings and paragraphs)
+     chunks are made up of a title, and a body 
+     
+     the body is a list of subheadings and paragraphs
 
     each chunk should have between 256 and 512 tokens (ada tokens)
     or less if the entire document is less than 256 tokens

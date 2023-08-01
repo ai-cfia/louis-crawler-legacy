@@ -6,13 +6,13 @@ import time
 
 import louis.db as db
 
+
 class TestDBLayer(unittest.TestCase):
     def setUp(self):
         self.connection = db.connect_db()
 
     def tearDown(self):
         self.connection.close()
-        
 
     def test_store_embedding_item(self):
         """sample test to check if store_embedding_item works"""
@@ -23,7 +23,7 @@ class TestDBLayer(unittest.TestCase):
                 "embedding_model": "ada_002"
             }))
             self.connection.rollback()
-            
+
     def test_store_chunk_item(self):
         """sample test to check if store_chunk_item works"""""
         with db.cursor(self.connection) as cursor:
@@ -32,7 +32,7 @@ class TestDBLayer(unittest.TestCase):
                 "title": "Test Title",
                 "text_content": "Test Text Content",
                 "token_count": 3,
-                "tokens": [1,2,3],
+                "tokens": [1, 2, 3],
             }))
             self.connection.rollback()
 

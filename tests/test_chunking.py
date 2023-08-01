@@ -73,7 +73,6 @@ class TestChunking(unittest.TestCase):
         # print(chunks)
         # print(chunks[0]['tokens'])
         self.assertEqual(chunks[0]["tokens"], EXPECTED_TOKENS)
-        titles = [c["title"] for c in chunks]
         self.assertEqual(
             chunks[0]["title"],
             "high-level title;last high-level title, sibling to the first",
@@ -141,8 +140,12 @@ class TestChunking(unittest.TestCase):
         # print(chunks)
         self.assertEqual(
             chunks[0]["text_content"],
-            "Z Zoonose (Zoonosis) Le terme « zoonose » n'est pas employé dans la Loi sur la salubrité des aliments au Canada ni dans le Règlement sur la salubrité des aliments au Canada. En général, le terme « zoonose » indique infection ou maladie pouvant être transmise entre les animaux et les humains.",
-        )
+            ("Z Zoonose (Zoonosis) Le terme « zoonose » n'est pas employé dans la " 
+             "Loi sur la salubrité des aliments au Canada ni dans le Règlement sur "
+             "la salubrité des aliments au Canada. En général, le terme « zoonose » "
+             "indique infection ou maladie pouvant être transmise entre les animaux "
+             "et les humains."))
+        
         self.assertEqual(chunks[0]["title"], "Glossary")
 
     def test_block_by_heading(self):
@@ -160,9 +163,12 @@ class TestChunking(unittest.TestCase):
                     "token_count": 510,
                     "title": "high-level title;second-level title",
                 },
-                {"text_content": "h2b", "tokens": [], "token_count": 512, "title": "second-level title b"},
-                {"text_content": "h2c", "tokens": [], "token_count": 510, "title": "third-level title;third-level title"},
-                {"text_content": "h1a", "tokens": [], "token_count": 255, "title": "last high-level title, sibling to the first"},
+                {"text_content": "h2b", "tokens": [],
+                    "token_count": 512, "title": "second-level title b"},
+                {"text_content": "h2c", "tokens": [], "token_count": 510,
+                    "title": "third-level title;third-level title"},
+                {"text_content": "h1a", "tokens": [], "token_count": 255,
+                    "title": "last high-level title, sibling to the first"},
             ],
         )
 
@@ -170,4 +176,5 @@ class TestChunking(unittest.TestCase):
         html = get_html("1648871138011")
         soup, chunks = chunk_html(html)
         for c in chunks:
-            self.assertTrue(c["token_count"] > 32, f"{c['text_content']} is too short")
+            self.assertTrue(c["token_count"] > 32,
+                            f"{c['text_content']} is too short")
