@@ -1,4 +1,4 @@
-"""Spider that fetches chunk tokens from the Kurt API 
+"""Spider that fetches chunk tokens from the Kurt API
    and converts them to embedding items"""
 
 import scrapy
@@ -22,14 +22,14 @@ def convert_to_embedding_items(response):
 
 
 class KurtSpider(scrapy.Spider):
-    """Spider that fetches chunk tokens from the Kurt API and 
+    """Spider that fetches chunk tokens from the Kurt API and
        converts them to embedding items"""
     name = "kurt"
 
     # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/quotas-limits
     # Request limits per model: 300 per minutes
     # Token limits per model: 120,000 per minute
-    # average processing time per request: 0.040ms 
+    # average processing time per request: 0.040ms
     #    (25 requests per second, 25*60=1500 requests per minute)
     # average input tokens per request: 512 tokens
 
@@ -41,6 +41,9 @@ class KurtSpider(scrapy.Spider):
         super(KurtSpider, self).__init__(*args, **kwargs)
         self.connection = db.connect_db()
         self.dbname = self.connection.info.dbname
+
+    def spider_closed(self, spider):
+        self.connection.close()
 
     def start_requests(self):
         with db.cursor(self.connection) as cursor:

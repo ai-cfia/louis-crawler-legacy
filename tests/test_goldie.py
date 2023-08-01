@@ -63,7 +63,7 @@ class TestGoldie(unittest.TestCase):
         html_content = results[0]["html_content"]
         soup = BeautifulSoup(html_content, "html.parser")
         text_content = [s for s in soup.stripped_strings]
-        print(text_content)
+        # print(text_content)
         self.assertEqual(
             text_content,
             [

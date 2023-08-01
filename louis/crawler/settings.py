@@ -1,7 +1,4 @@
 """Scrapy settings for louis project."""
-import dotenv
-
-dotenv.load_dotenv()
 
 # commonly used. You can find more settings consulting the documentation:
 #

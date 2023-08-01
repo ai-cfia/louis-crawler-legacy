@@ -67,11 +67,16 @@ class LouisDownloaderMiddleware:
         # open connection to database
         self.connection = db.connect_db()
 
+    def __del__(self):
+        self.connection.close()
+
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(s.spider_closed, signal=signals.spider_closed)
+
         return s
 
     def process_request(self, request, spider):

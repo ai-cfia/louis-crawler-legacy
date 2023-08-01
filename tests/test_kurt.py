@@ -22,5 +22,5 @@ class TestKurt(unittest.TestCase):
     def test_start_requests(self):
         """Test that the spider returns a request for each chunk_id"""
         requests = self.spider.start_requests()
-        print(requests)
-        #self.assertEqual(len(list(requests)), 1)
+        # print(requests)
+        self.assertEqual(len(list(requests)), 1)
