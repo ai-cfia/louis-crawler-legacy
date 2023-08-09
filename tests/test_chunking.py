@@ -140,12 +140,12 @@ class TestChunking(unittest.TestCase):
         # print(chunks)
         self.assertEqual(
             chunks[0]["text_content"],
-            ("Z Zoonose (Zoonosis) Le terme « zoonose » n'est pas employé dans la " 
+            ("Z Zoonose (Zoonosis) Le terme « zoonose » n'est pas employé dans la "
              "Loi sur la salubrité des aliments au Canada ni dans le Règlement sur "
              "la salubrité des aliments au Canada. En général, le terme « zoonose » "
              "indique infection ou maladie pouvant être transmise entre les animaux "
              "et les humains."))
-        
+
         self.assertEqual(chunks[0]["title"], "Glossary")
 
     def test_block_by_heading(self):
@@ -178,3 +178,8 @@ class TestChunking(unittest.TestCase):
         for c in chunks:
             self.assertTrue(c["token_count"] > 32,
                             f"{c['text_content']} is too short")
+
+    def test_chunking_body_not_found(self):
+        html = get_html("1445601296610")
+        soup, chunks = chunk_html(html)
+        self.assertEqual(len(chunks), 8)

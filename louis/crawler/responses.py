@@ -49,7 +49,7 @@ def response_from_crawl(row, url):
     response = HtmlResponse(url=url,
         request=request,
         body=row['html_content'],
-        encoding='utf-8')
+        encoding='utf_8')
     return response
 
 def response_from_chunk_token(row, url):
