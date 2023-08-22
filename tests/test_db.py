@@ -60,7 +60,8 @@ class TestDB(unittest.TestCase):
     def test_store_chunk_item2(self):
         """sample test to check if store_chunk_item works"""""
         with db.cursor(self.connection) as cursor:
-            stored_chunk = crawler.store_chunk_item(cursor, items.ChunkItem(testchunk.example1))
+            stored_chunk = crawler.store_chunk_item(
+                cursor, items.ChunkItem(testchunk.example1))
         self.assertIn('token_id', stored_chunk)
         self.assertIn('chunk_id', stored_chunk)
         self.assertIn('md5hash', stored_chunk)
@@ -68,7 +69,8 @@ class TestDB(unittest.TestCase):
     def test_store_chunk_page1581548517693(self):
         """sample test to check if store_chunk_item works"""""
         with db.cursor(self.connection) as cursor:
-            stored_chunk = crawler.store_chunk_item(cursor, items.ChunkItem(testchunk.page1581548517693))
+            stored_chunk = crawler.store_chunk_item(
+                cursor, items.ChunkItem(testchunk.page1581548517693))
         self.assertIn('token_id', stored_chunk)
         self.assertIn('chunk_id', stored_chunk)
         self.assertIn('md5hash', stored_chunk)
@@ -103,6 +105,9 @@ class TestDB(unittest.TestCase):
 
             # should work fine second time
             chunk_item_repeated = crawler.store_chunk_item(cursor, item)
-        self.assertEqual(chunk_item_first_insert['token_id'], chunk_item_repeated['token_id'])
-        self.assertEqual(chunk_item_first_insert['chunk_id'], chunk_item_repeated['chunk_id'])
-        self.assertEqual(chunk_item_first_insert['md5hash'], chunk_item_repeated['md5hash'])
+        self.assertEqual(
+            chunk_item_first_insert['token_id'], chunk_item_repeated['token_id'])
+        self.assertEqual(
+            chunk_item_first_insert['chunk_id'], chunk_item_repeated['chunk_id'])
+        self.assertEqual(
+            chunk_item_first_insert['md5hash'], chunk_item_repeated['md5hash'])
