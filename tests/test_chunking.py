@@ -183,3 +183,18 @@ class TestChunking(unittest.TestCase):
         html = get_html("1445601296610")
         soup, chunks = chunk_html(html)
         self.assertEqual(len(chunks), 8)
+
+    def test_chunking_no_chunks(self):
+        # postgresql://inspectioncanadaca/louis_v004/crawl/66064032-4acc-4d30-b836-2d3f4db13311
+        # https://inspection.canada.ca/sante-des-animaux/produits-biologiques-veterinaires/avis/fra/1299161124455/1320703838068
+        html = get_html("1320703838068")
+        soup, chunks = chunk_html(html)
+        self.assertIsInstance(chunks, list)
+        self.assertIsInstance(chunks[0], dict)
+        self.assertEqual(len(chunks), 1)
+
+    def test_chunking_no_chunks2(self):
+        html = get_html('1637767398789')
+        soup, chunks = chunk_html(html)
+        self.assertIsInstance(chunks, list)
+        self.assertIsInstance(chunks[0], dict)

@@ -24,14 +24,20 @@ class LouisPipeline:
         try:
             if spider.name == 'goldie':
                 with db.cursor(self.connection) as cursor:
-                    return crawler.store_crawl_item(cursor, item)
+                    data = crawler.store_crawl_item(cursor, item)
             elif spider.name in ['hawn', 'russell']:
                 with db.cursor(self.connection) as cursor:
-                    return crawler.store_chunk_item(cursor, item)
+                    data = crawler.store_chunk_item(cursor, item)
             elif spider.name == 'kurt':
                 with db.cursor(self.connection) as cursor:
-                    return crawler.store_embedding_item(cursor, item)
-        except db.DBError:
+                    data = crawler.store_embedding_item(cursor, item)
+            else:
+                raise ValueError(f"Unknown spider name: {spider.name}")
+        except:
             # spider.logger.error("Error storing item", exc_info=True)
             self.connection.rollback()
             raise
+        else:
+            spider.logger.info("Item stored in database")
+            self.connection.commit()
+        return data

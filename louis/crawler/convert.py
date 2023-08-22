@@ -24,6 +24,6 @@ def convert_chunk_token_to_embedding_items(chunk_token):
         {
             "token_id": chunk_token['token_id'],
             "embedding": embedding,
-            "embedding_model": 'text-embedding-ada-002'
+            "embedding_model": 'ada_002'
         }
     )

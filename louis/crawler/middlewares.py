@@ -84,7 +84,7 @@ class LouisDownloaderMiddleware:
 
         if spider.name == 'hawn':
             with db.cursor(self.connection) as cursor:
-                row = crawler.fetch_crawl_row_by_url(cursor, request.url)
+                row = crawler.fetch_crawl_row(cursor, request.url)
                 return response_from_crawl(row, request.url)
 
         if spider.name == 'russell':
