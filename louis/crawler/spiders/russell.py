@@ -24,7 +24,8 @@ class RussellSpider(scrapy.Spider):
             url = db.create_postgresql_url(self.dbname, 'crawl', crawl_id)
             yield scrapy.Request(url=url, callback=self.parse)
         # url = db.create_postgresql_url(self.dbname, 'crawl', crawl_ids[0])
-        # # url = db.create_postgresql_url(self.dbname, 'crawl', 'c8494cfc-f2d5-4752-974b-f9f44fc5eac5')
+        # url = db.create_postgresql_url(
+        #       self.dbname, 'crawl', 'c8494cfc-f2d5-4752-974b-f9f44fc5eac5')
         # yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):

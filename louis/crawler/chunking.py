@@ -78,7 +78,8 @@ def estimate_best_bucket_size(total, min_tokens, max_tokens):
 
 def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
     """some leafs might be bigger than desired. split text into smaller chunks"""
-    assert large_chunk['token_count'] > max_tokens, "chunk must be bigger than max_tokens"
+    assert large_chunk['token_count'] > max_tokens, (
+        "chunk must be bigger than max_tokens")
     text_content = large_chunk['text_content']
     sentences = text_content.split('.')
 
@@ -108,7 +109,8 @@ def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
     for sentence_chunk in sentence_chunks:
         # need to be careful, maybe this sentence_chunk is already over the limit but
         # there's also nothing in the bucket yet
-        if bucket_size > 0 and bucket_size + sentence_chunk['token_count'] >= target_bucket_size:
+        predicted_bucket_size = bucket_size + sentence_chunk['token_count']
+        if bucket_size > 0 and predicted_bucket_size >= target_bucket_size:
             # we're over the limit, we start a new bucket
             bucket = []
             buckets.append(bucket)
@@ -119,7 +121,9 @@ def split_chunk_into_subchunks(large_chunk, min_tokens=256, max_tokens=512):
 
     smaller_chunks = []
     for bucket in buckets:
-        assert len(bucket) > 0, "bucket must not be empty: {} for large_chunk {}".format(bucket, large_chunk)
+        assert len(bucket) > 0, (
+            "bucket must not be empty: {} for large_chunk {}"
+            .format(bucket, large_chunk))
         small_chunk = combine_chunks_into_single_chunk(bucket)
         smaller_chunks.append(small_chunk)
     return smaller_chunks

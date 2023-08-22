@@ -12,7 +12,8 @@ example1 = {
  'url': 'https://inspection.canada.ca/a-propos-de-l-acia/trouver-un-formulaire/avis-de-confidentialite/fra/1445601295813/1445601296610'
 }
 
-page1581548517693 = {'text_content': ' Cette carte représente les municipalités régionales de '
+page1581548517693 = {
+    'text_content': ' Cette carte représente les municipalités régionales de '
                  'comté (MRC) du Québec qui sont présentement réglementées à '
                  "l'égard de la mouche du bleuet (Acton, Argenteuil, "
                  'Arthabaska, Avignon, Beauce-Sartigan, Beauharnois-Salaberry, '

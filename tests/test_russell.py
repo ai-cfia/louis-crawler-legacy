@@ -38,7 +38,9 @@ class TestRussell(unittest.TestCase):
         row = {
             "id": UUID("00009c98-e335-4ed1-aeff-b9de05c1f022"),
             "url": 'https://inspection.canada.ca/about-cfia/find-a-form/privacy-notice/eng/1445601295813/1445601296610',
-            "title": "Énoncé de confidentialité applicable au formulaire CFIA/ACIA 3369 - Demande d'inspection des exportations et de certification phytosanitaire - Agence canadienne d'inspection des aliments",
+            "title": "Énoncé de confidentialité applicable au formulaire CFIA/ACIA 3369"
+                " - Demande d'inspection des exportations et de certification phytosanitaire"  # noqa: E501
+                " - Agence canadienne d'inspection des aliments",
             "lang": "fr",
             "html_content": get_html("1445601296610"),
             "last_crawled": "1685416791",
@@ -50,4 +52,5 @@ class TestRussell(unittest.TestCase):
         items = list(self.spider.parse(response))
         self.assertEqual(items[0]["url"], row['url'])
         self.assertEqual(len(items), 8)
-        self.assertTrue(items[0]["text_content"].startswith('Comment ouvrir un formulaire'))
+        self.assertTrue(items[0]["text_content"].startswith(
+            'Comment ouvrir un formulaire'))

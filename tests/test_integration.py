@@ -1,7 +1,4 @@
 import unittest
-import subprocess
-
-from twisted.internet import reactor, task
 
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -27,12 +24,13 @@ class SpidersTests(unittest.TestCase):
 
     self.assertEqual(crawler.crawling, False)
     self.assertTrue(isinstance(crawler.spider, RussellSpider))
-    requests = list(crawler.spider.start_requests())
+    _requests = list(crawler.spider.start_requests())
     # self.assertEqual(len(requests), 1)
 
     from louis.crawler.middlewares import LouisDownloaderMiddleware
-    downloader = list(filter(
+    _downloader = list(filter(
       lambda x: isinstance(x, LouisDownloaderMiddleware),
       crawler.engine.downloader.middleware.middlewares))[0]
-    # self.assertEqual(downloader.connection.info.status, downloader.connection.info.status.OK)
+    # self.assertEqual(
+    #     downloader.connection.info.status, downloader.connection.info.status.OK)
     # self.crawler.stop()
