@@ -3,9 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches:
-      - main
+      - redat97/issue7
   pull_request:
-  # Absence of the branches property under pull_request means it will apply to all branches
 
 jobs:
   lint-test:
@@ -21,12 +20,10 @@ jobs:
       tag: ${{ github.sha }}
     secrets: inherit
 
-  # deploy does not apply for now as this is a batch service
-  # deploy:
-  #   if: github.ref == 'refs/heads/main'
-  #   needs: build
-  #   uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
-  #   with:
-  #     container-name: ${{ github.event.repository.name }}
-  #     tag: ${{ github.sha }}
-  #   secrets: inherit
+  deploy:
+    needs: build
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-deploy-gcp.yml@main
+    with:
+      container-name: ${{ github.event.repository.name }}
+      tag: ${{ github.sha }}
+    secrets: inherit
