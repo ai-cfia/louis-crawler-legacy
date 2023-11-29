@@ -5,8 +5,8 @@ import louis.crawler.items as items
 
 import time
 
-import louis.db as db
-import louis.db.crawler as crawler
+import ailab.db as db
+import ailab.db.crawler as crawler
 
 import objects.chunk as testchunk
 

@@ -10,8 +10,8 @@ from urllib.parse import urlparse
 from louis.crawler.responses import (
     fake_response_from_file, response_from_crawl, response_from_chunk_token)
 
-import louis.db as db
-import louis.db.crawler as crawler
+import ailab.db as db
+import ailab.db.crawler as crawler
 
 class LouisSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,

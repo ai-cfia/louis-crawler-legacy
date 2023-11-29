@@ -3,8 +3,8 @@
 
 import scrapy
 
-import louis.db as db
-import louis.db.crawler as crawler
+import ailab.db as db
+import ailab.db.crawler as crawler
 
 from louis.crawler.convert import convert_chunk_token_to_embedding_items
 

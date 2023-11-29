@@ -1,9 +1,9 @@
 
 import scrapy
 
-import louis.db as db
+import ailab.db as db
 
-from louis.db.crawler import fetch_crawl_ids_without_chunk
+from ailab.db.crawler import fetch_crawl_ids_without_chunk
 from louis.crawler.convert import convert_html_content_to_chunk_items
 
 class RussellSpider(scrapy.Spider):
