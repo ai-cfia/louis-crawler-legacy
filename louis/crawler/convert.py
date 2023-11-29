@@ -3,7 +3,7 @@ from louis.crawler.chunking import chunk_html
 from louis.crawler.items import ChunkItem
 from louis.crawler.items import EmbeddingItem
 
-from louis.models.openai import fetch_embedding
+from ailab.models.openai import fetch_embedding
 
 def convert_html_content_to_chunk_items(url, html_content):
     soup, chunks = chunk_html(html_content)
