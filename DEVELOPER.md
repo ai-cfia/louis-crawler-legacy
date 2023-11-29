@@ -51,6 +51,17 @@ kurt crawler: crawl tokens to embedding
 scrapy crawl kurt --logfile logs/kurt.log
 ```
 
+## Developing with ailab-db
+
+Database operations are done within the ailab-db package.
+
+To test and develop concurrently between the crawler and the the ailab-db package, install editable version of the ailab-db dependency:
+
+```bash
+pip install -e git+https://github.com/ai-cfia/ailab-db@main#egg=ailab_db
+```
+this will clone ailab_db in sources allowing you to submit pull requests too
+
 ## References
 
 * [Chunking Strategies for LLM Applications](https://www.pinecone.io/learn/chunking-strategies/)
