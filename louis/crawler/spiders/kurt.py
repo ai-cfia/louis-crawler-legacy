@@ -6,6 +6,7 @@ import scrapy
 from louis.crawler.items import EmbeddingItem
 from ailab.models.openai import fetch_embedding
 
+import ailab.db.crawler as crawler
 import ailab.db as db
 
 
@@ -47,7 +48,7 @@ class KurtSpider(scrapy.Spider):
 
     def start_requests(self):
         with db.cursor(self.connection) as cursor:
-            chunk_ids = db.fetch_chunk_id_without_embedding(cursor)
+            chunk_ids = crawler.fetch_chunk_id_without_embedding(cursor)
         for chunk_id in chunk_ids:
             url = db.create_postgresql_url(self.dbname, 'chunk', chunk_id, {
                                            'encoding': 'cl100k_base'})
