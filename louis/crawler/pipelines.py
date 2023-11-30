@@ -6,7 +6,7 @@
 
 # useful for handling different item types with a single interface
 
-import louis.db as db
+import ailab.db as db
 
 class LouisPipeline:
     """Pipeline for storing items in the database"""

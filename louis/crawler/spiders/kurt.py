@@ -4,9 +4,9 @@
 import scrapy
 
 from louis.crawler.items import EmbeddingItem
-from louis.models.openai import fetch_embedding
+from ailab.models.openai import fetch_embedding
 
-import louis.db as db
+import ailab.db as db
 
 
 def convert_to_embedding_items(response):

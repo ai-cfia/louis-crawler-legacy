@@ -4,7 +4,7 @@ import louis.crawler.items as items
 
 import time
 
-import louis.db as db
+import ailab.db as db
 
 
 class TestDBLayer(unittest.TestCase):
