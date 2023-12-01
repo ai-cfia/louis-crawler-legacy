@@ -53,6 +53,7 @@ class KurtSpider(scrapy.Spider):
             url = db.create_postgresql_url(self.dbname, 'chunk', chunk_id, {
                                            'encoding': 'cl100k_base'})
             yield scrapy.Request(url=url, callback=self.parse)
+        self.spider_closed(self)
 
     def parse(self, response):
         yield from convert_to_embedding_items(response)

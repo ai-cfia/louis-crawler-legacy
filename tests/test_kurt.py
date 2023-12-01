@@ -9,6 +9,9 @@ class TestKurt(unittest.TestCase):
     """Test the Kurt spider"""
     def setUp(self):
         self.spider = KurtSpider()
+    
+    def tearDown(self):
+        self.spider.spider_closed(self.spider)
 
     def test_parse(self):
         """Test that the spider returns a request for each chunk_id"""
@@ -18,6 +21,7 @@ class TestKurt(unittest.TestCase):
         response = response_from_chunk_token(data, 'https://example.com/path')
         item = yield from self.spider.parse(response)
         self.assertEqual(item['chunk_id'], 'https://example.com/path')
+        
 
     def test_start_requests(self):
         """Test that the spider returns a request for each chunk_id"""
