@@ -1,11 +1,6 @@
 import unittest
 
-import louis.crawler.items as items
-
-import time
-
 import ailab.db as db
-import ailab.db.crawler as crawler
 
 
 class TestDBLayer(unittest.TestCase):
