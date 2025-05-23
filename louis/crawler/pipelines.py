@@ -28,7 +28,7 @@ class LouisPipeline:
 
     def process_item(self, item, spider):
         """process item and store in database"""
-        if spider.name in ['goldie', 'test_goldie']:
+        if spider.name in ['goldie', 'test_goldie', 'goldie_playwright']:
             try:
                 with db.cursor(self.connection) as cursor:
                     result = db.store_crawl_item(cursor, item)

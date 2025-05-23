@@ -50,6 +50,7 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
+    "louis.crawler.playwright_middleware.PlaywrightMiddleware": 585,
     "louis.crawler.middlewares.LouisDownloaderMiddleware": 543,
 }
 
@@ -92,3 +93,13 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
 CLOSESPIDER_ERRORCOUNT = 0
+
+# Playwright settings
+PLAYWRIGHT_BROWSER_TYPE = 'chromium'  # or 'firefox', 'webkit'
+PLAYWRIGHT_HEADLESS = True
+PLAYWRIGHT_BROWSER_ARGS = [
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--disable-features=VizDisplayCompositor'
+]
