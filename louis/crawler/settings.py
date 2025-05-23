@@ -50,7 +50,7 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    "louis.middlewares.LouisDownloaderMiddleware": 543,
+    "louis.crawler.middlewares.LouisDownloaderMiddleware": 543,
 }
 
 # Enable or disable extensions
@@ -62,7 +62,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "louis.pipelines.LouisPipeline": 300,
+    "louis.crawler.pipelines.LouisPipeline": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

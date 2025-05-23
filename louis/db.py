@@ -10,8 +10,15 @@ import uuid
 from contextlib import contextmanager
 from urllib.parse import urlencode, urlparse, parse_qs
 from pathlib import Path
-import psycopg
-from psycopg.rows import dict_row
+
+# Make psycopg import optional for disk-only storage
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+    PSYCOPG_AVAILABLE = True
+except ImportError:
+    PSYCOPG_AVAILABLE = False
+    print("Warning: psycopg not available. Database storage disabled.")
 
 
 def get_storage_mode():
@@ -20,7 +27,14 @@ def get_storage_mode():
     Returns:
         str: 'database', 'disk', or 'both'
     """
-    return os.getenv('STORAGE_MODE', 'database').lower()
+    mode = os.getenv('STORAGE_MODE', 'database').lower()
+    
+    # Force disk mode if psycopg is not available
+    if not PSYCOPG_AVAILABLE and mode in ['database', 'both']:
+        print(f"Warning: psycopg not available, forcing disk storage mode")
+        return 'disk'
+    
+    return mode
 
 
 def get_storage_directory():
@@ -146,8 +160,12 @@ def connect_db():
     """Connect to the PostgreSQL database.
     
     Returns:
-        psycopg.Connection: Database connection object
+        psycopg.Connection: Database connection object or None if not available
     """
+    if not PSYCOPG_AVAILABLE:
+        print("Warning: Cannot connect to database - psycopg not available")
+        return None
+    
     # Try to get database URL from environment variable first
     database_url = os.getenv('DATABASE_URL')
     
@@ -487,17 +505,26 @@ def initialize_database():
     storage_mode = get_storage_mode()
     
     if storage_mode in ['database', 'both']:
-        try:
-            connection = connect_db()
-            try:
-                create_tables(connection)
-                print("✅ Database initialized successfully")
-            finally:
-                connection.close()
-        except Exception as e:
-            print(f"❌ Database initialization failed: {e}")
+        if not PSYCOPG_AVAILABLE:
+            print("❌ Database storage requested but psycopg not available")
             if storage_mode == 'database':
-                raise
+                print("💡 Hint: Install psycopg with 'uv pip install psycopg psycopg-binary' or use STORAGE_MODE=disk")
+                return
+        else:
+            try:
+                connection = connect_db()
+                if connection:
+                    try:
+                        create_tables(connection)
+                        print("✅ Database initialized successfully")
+                    finally:
+                        connection.close()
+                else:
+                    print("❌ Failed to connect to database")
+            except Exception as e:
+                print(f"❌ Database initialization failed: {e}")
+                if storage_mode == 'database':
+                    raise
     
     if storage_mode in ['disk', 'both']:
         try:
