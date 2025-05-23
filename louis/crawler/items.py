@@ -15,6 +15,7 @@ class CrawlItem(scrapy.Item):
     html_content = scrapy.Field()
     last_crawled = scrapy.Field()
     last_updated = scrapy.Field()
+    depth = scrapy.Field()  # For tracking crawl depth in parallel processing
 
 class ChunkItem(scrapy.Item):
     """Item for storing chunk data"""

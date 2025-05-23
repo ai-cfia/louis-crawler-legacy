@@ -8,8 +8,10 @@
 
 import louis.db as db
 
+
 class LouisPipeline:
     """Pipeline for storing items in the database"""
+
     def open_spider(self, spider):
         """open connection to the database"""
         try:
@@ -28,7 +30,12 @@ class LouisPipeline:
 
     def process_item(self, item, spider):
         """process item and store in database"""
-        if spider.name in ['goldie', 'test_goldie', 'goldie_playwright']:
+        if spider.name in [
+            "goldie",
+            "test_goldie",
+            "goldie_playwright",
+            "goldie_playwright_parallel",
+        ]:
             try:
                 with db.cursor(self.connection) as cursor:
                     result = db.store_crawl_item(cursor, item)
@@ -44,11 +51,11 @@ class LouisPipeline:
                 except Exception as disk_error:
                     print(f"❌ Disk storage also failed: {disk_error}")
                     return item
-        elif spider.name == 'hawn':
+        elif spider.name == "hawn":
             with db.cursor(self.connection) as cursor:
                 return db.store_chunk_item(cursor, item)
-        elif spider.name == 'kurt':
+        elif spider.name == "kurt":
             with db.cursor(self.connection) as cursor:
                 return db.store_embedding_item(cursor, item)
-        
+
         return item

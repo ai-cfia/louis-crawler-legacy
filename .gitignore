@@ -166,3 +166,4 @@ Cache/
 
 storage/*
 test_storage/*
+logs/*
