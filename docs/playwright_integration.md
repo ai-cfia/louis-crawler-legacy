@@ -187,11 +187,8 @@ class SPASpider(PlaywrightSpider):
 # Run the full Playwright spider
 scrapy crawl goldie_playwright
 
-# Run the smart spider (automatic detection)
-scrapy crawl goldie_smart
-
-# Run the hybrid spider
-scrapy crawl goldie_hybrid
+# Run the Playwright spider
+scrapy crawl goldie_playwright
 
 # Run with custom settings
 scrapy crawl goldie_playwright -s PLAYWRIGHT_HEADLESS=False

@@ -33,17 +33,16 @@ scrapy crawl goldie_playwright -a max_depth=2    # Two levels deep
 scrapy crawl goldie_playwright -a max_depth=1 -a scraped_urls_file="my_urls.txt"
 
 # Both arguments together
-scrapy crawl goldie_smart -a max_depth=2 -a scraped_urls_file="smart_crawl.txt"
+scrapy crawl goldie_playwright -a max_depth=2 -a scraped_urls_file="custom_crawl.txt"
 ```
 
 ### Default Settings
 
 If you don't specify arguments, the defaults are:
 - `max_depth=1`: Scrape start URLs and their direct links
-- `scraped_urls_file`: Different for each spider:
+- `scraped_urls_file`: Default file names:
   - `goldie_playwright`: `scraped_urls.txt`
-  - `goldie_smart`: `scraped_urls_smart.txt`
-  - `goldie_hybrid`: `scraped_urls_hybrid.txt`
+  - `goldie_playwright_parallel`: `logs/scraped_urls.txt`
 
 ## Examples
 
@@ -61,7 +60,7 @@ This will:
 ### Example 2: Two Levels Deep (Depth 2)
 
 ```bash
-scrapy crawl goldie_smart -a max_depth=2 -a scraped_urls_file="deep_crawl.txt"
+scrapy crawl goldie_playwright -a max_depth=2 -a scraped_urls_file="deep_crawl.txt"
 ```
 
 This will:
@@ -91,9 +90,8 @@ The second run will:
 
 ```bash
 # Run different spiders with their own tracking
-scrapy crawl goldie_playwright -a max_depth=1    # Uses scraped_urls.txt
-scrapy crawl goldie_smart -a max_depth=1         # Uses scraped_urls_smart.txt
-scrapy crawl goldie_hybrid -a max_depth=1        # Uses scraped_urls_hybrid.txt
+scrapy crawl goldie_playwright -a max_depth=1           # Uses scraped_urls.txt
+scrapy crawl goldie_playwright_parallel -a max_depth=1  # Uses logs/scraped_urls.txt
 ```
 
 Each spider maintains its own URL tracking file by default.
@@ -169,7 +167,7 @@ The spider tracks URLs in memory (set) and on disk (file):
 
 ```bash
 # For large crawls, use a dedicated file per crawl session
-scrapy crawl goldie_smart -a scraped_urls_file="crawl_$(date +%Y%m%d_%H%M%S).txt"
+scrapy crawl goldie_playwright -a scraped_urls_file="crawl_$(date +%Y%m%d_%H%M%S).txt"
 
 # Monitor file size
 ls -lh scraped_urls*.txt
