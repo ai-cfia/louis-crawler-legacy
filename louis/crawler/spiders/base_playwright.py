@@ -48,6 +48,10 @@ class PlaywrightSpider(scrapy.Spider):
         if 'headers' in kwargs:
             meta['headers'] = kwargs['headers']
         
+        # Merge external meta with internal meta
+        if 'meta' in kwargs:
+            meta.update(kwargs['meta'])
+        
         return Request(
             url=url,
             callback=callback or self.parse,
@@ -55,7 +59,7 @@ class PlaywrightSpider(scrapy.Spider):
             **{k: v for k, v in kwargs.items() if k not in [
                 'wait_until', 'timeout', 'block_resources', 'wait_time',
                 'wait_for_selector', 'selector_timeout', 'wait_for_function',
-                'function_timeout', 'headers'
+                'function_timeout', 'headers', 'meta'
             ]}
         )
     
