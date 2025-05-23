@@ -165,3 +165,4 @@ Cache/
 **/**.whl
 
 storage/*
+test_storage/*
