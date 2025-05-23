@@ -21,7 +21,6 @@ iniconfig==2.0.0
 itemadapter==0.8.0
 itemloaders==1.1.0
 jmespath==1.0.1
-louis-db @ git+https://github.com/ai-cfia/louis-db@33c3161f859df28a496efb3f22c21a0a0a93919c
 lxml==4.9.3
 multidict==6.0.4
 numpy==1.25.1
