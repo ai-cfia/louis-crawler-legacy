@@ -80,6 +80,7 @@ class PlaywrightSpider(scrapy.Spider):
         url = fix_vhost(response.url)
         now = int(time.time())
         lang = self.detect_language(url)
+        children = self.extract_children_links(response)
         
         return CrawlItem({
             'url': url,
@@ -87,8 +88,35 @@ class PlaywrightSpider(scrapy.Spider):
             'lang': lang,
             'html_content': content,
             'last_crawled': now,
-            'last_updated': last_updated
+            'last_updated': last_updated,
+            'children': children
         })
+    
+    def extract_children_links(self, response) -> List[str]:
+        """Extract all valid links from the current page."""
+        children = []
+        
+        for link in response.css("a::attr(href)").getall():
+            if link and not link.startswith("#") and not link.startswith("mailto:"):
+                absolute_url = response.urljoin(link)
+                
+                # Check if URL is in allowed domains
+                if self.allowed_domains:
+                    domain = absolute_url.split("/")[2] if "://" in absolute_url else ""
+                    if any(allowed in domain for allowed in self.allowed_domains):
+                        children.append(absolute_url)
+                else:
+                    children.append(absolute_url)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_children = []
+        for link in children:
+            if link not in seen:
+                seen.add(link)
+                unique_children.append(link)
+        
+        return unique_children
     
     def clean_content(self, response) -> str:
         """Clean and extract main content from response - can be overridden."""

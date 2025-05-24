@@ -79,11 +79,11 @@ Depending on your `STORAGE_MODE`:
 **Database Storage:**
 - **Table:** `crawl_items`
 - **HTML field:** `html_content` - contains the cleaned HTML content
-- **Other fields:** `url`, `title`, `lang` (en/fr), `last_crawled`, `last_updated`
+- **Other fields:** `url`, `title`, `lang` (en/fr), `last_crawled`, `last_updated`, `children` (links found on page)
 
 **Disk Storage:**
 - **HTML files:** `storage/html/{uuid}.html` - cleaned HTML content
-- **Metadata files:** `storage/metadata/{uuid}.json` - contains URL, title, language, timestamps
+- **Metadata files:** `storage/metadata/{uuid}.json` - contains URL, title, language, timestamps, and children links
 
 ### Data Pipeline
 
@@ -119,7 +119,7 @@ python -m pytest
 ## Database Schema
 
 When using database storage, these tables are created:
-- `crawl_items` - Raw HTML content from web pages
+- `crawl_items` - Raw HTML content from web pages with children links
 - `chunk_items` - Processed text chunks with token information  
 - `embedding_items` - AI embeddings for semantic search
 - `page_links` - Link relationships between pages

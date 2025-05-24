@@ -17,6 +17,22 @@ def convert_to_crawl_item(response):
     lang = 'en'
     if url.find('/fra/') != -1:
         lang = 'fr'
+    
+    # Extract children links
+    children = []
+    for link in response.css("a::attr(href)").getall():
+        if link and not link.startswith("#") and not link.startswith("mailto:"):
+            absolute_url = response.urljoin(link)
+            # Apply domain filtering if needed
+            children.append(absolute_url)
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_children = []
+    for link in children:
+        if link not in seen:
+            seen.add(link)
+            unique_children.append(link)
 
     yield CrawlItem({
         'url': url,
@@ -24,7 +40,8 @@ def convert_to_crawl_item(response):
         'lang': lang,
         'html_content': content,
         'last_crawled': now,
-        'last_updated': last_updated
+        'last_updated': last_updated,
+        'children': unique_children
     })
 
 def clean(response):

@@ -131,7 +131,7 @@ def store_to_disk(item):
     
     Args:
         item: CrawlItem object with fields: url, title, lang, html_content, 
-              last_crawled, last_updated
+              last_crawled, last_updated, children
               
     Returns:
         dict: The stored item with generated id and file paths
@@ -149,6 +149,7 @@ def store_to_disk(item):
         'lang': item.get('lang'),
         'last_crawled': item.get('last_crawled'),
         'last_updated': item.get('last_updated'),
+        'children': item.get('children', []),
         'html_file': f"{file_uuid}.html",
         'metadata_file': f"{file_uuid}.json"
     }
@@ -228,7 +229,7 @@ def store_to_s3(item):
     
     Args:
         item: CrawlItem object with fields: url, title, lang, html_content, 
-              last_crawled, last_updated
+              last_crawled, last_updated, children
               
     Returns:
         dict: The stored item with generated id and S3 object names
@@ -251,6 +252,7 @@ def store_to_s3(item):
         'lang': item.get('lang'),
         'last_crawled': item.get('last_crawled'),
         'last_updated': item.get('last_updated'),
+        'children': item.get('children', []),
         'html_object': f"html/{file_uuid}.html",
         'metadata_object': f"metadata/{file_uuid}.json",
         'bucket_name': bucket_name
@@ -426,8 +428,22 @@ def create_tables(connection):
                 html_content TEXT,
                 last_crawled INTEGER,
                 last_updated TEXT,
+                children JSONB DEFAULT '[]'::jsonb,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        """)
+        
+        # Migration: Add children column if it doesn't exist
+        cur.execute("""
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name = 'crawl_items' AND column_name = 'children'
+                ) THEN
+                    ALTER TABLE crawl_items ADD COLUMN children JSONB DEFAULT '[]'::jsonb;
+                END IF;
+            END $$;
         """)
         
         # Create chunk_items table
@@ -481,23 +497,32 @@ def store_crawl_item_to_database(cur, item):
     Args:
         cur: Database cursor
         item: CrawlItem object with fields: url, title, lang, html_content, 
-              last_crawled, last_updated
+              last_crawled, last_updated, children
               
     Returns:
         dict: The stored item with generated id
     """
     # Use INSERT ... ON CONFLICT to handle duplicates
     cur.execute("""
-        INSERT INTO crawl_items (url, title, lang, html_content, last_crawled, last_updated)
-        VALUES (%(url)s, %(title)s, %(lang)s, %(html_content)s, %(last_crawled)s, %(last_updated)s)
+        INSERT INTO crawl_items (url, title, lang, html_content, last_crawled, last_updated, children)
+        VALUES (%(url)s, %(title)s, %(lang)s, %(html_content)s, %(last_crawled)s, %(last_updated)s, %(children)s)
         ON CONFLICT (url) DO UPDATE SET
             title = EXCLUDED.title,
             lang = EXCLUDED.lang,
             html_content = EXCLUDED.html_content,
             last_crawled = EXCLUDED.last_crawled,
-            last_updated = EXCLUDED.last_updated
+            last_updated = EXCLUDED.last_updated,
+            children = EXCLUDED.children
         RETURNING *
-    """, dict(item))
+    """, {
+        'url': item.get('url'),
+        'title': item.get('title'),
+        'lang': item.get('lang'),
+        'html_content': item.get('html_content'),
+        'last_crawled': item.get('last_crawled'),
+        'last_updated': item.get('last_updated'),
+        'children': json.dumps(item.get('children', []))  # Convert list to JSON
+    })
     
     result = cur.fetchone()
     return result
@@ -509,7 +534,7 @@ def store_crawl_item(cur, item):
     Args:
         cur: Database cursor (may be None for non-database modes)
         item: CrawlItem object with fields: url, title, lang, html_content, 
-              last_crawled, last_updated
+              last_crawled, last_updated, children
               
     Returns:
         dict: The stored item with generated id

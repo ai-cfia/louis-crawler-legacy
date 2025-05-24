@@ -174,7 +174,7 @@ def process_url_worker(args):
                     item["depth"] = depth
                     
                     # Determine language from URL
-                    item["lang"] = "fr" if "/fr/" in url else "en"
+                    item["lang"] = "fr" if ".ca/fr" in url else "en"
 
                     # Extract links
                     links = []
@@ -202,19 +202,30 @@ def process_url_worker(args):
                             else:
                                 links.append(absolute_url)
 
-                    logger.info(f"[TASK:{task_id}] Extracted {len(links)} links")
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    unique_links = []
+                    for link in links:
+                        if link not in seen:
+                            seen.add(link)
+                            unique_links.append(link)
+                    
+                    # Store links in the children field
+                    item["children"] = unique_links
+
+                    logger.info(f"[TASK:{task_id}] Extracted {len(unique_links)} unique links")
 
                     result.update(
                         {
                             "success": True,
                             "item": dict(item),
-                            "links": links,
+                            "links": unique_links,
                             "processing_time": time.time() - start_time,
                         }
                     )
 
                     logger.info(
-                        f"[TASK:{task_id}] Successfully processed {url} in {result['processing_time']:.2f}s - found {len(links)} links"
+                        f"[TASK:{task_id}] Successfully processed {url} in {result['processing_time']:.2f}s - found {len(unique_links)} links"
                     )
 
                 else:
@@ -337,7 +348,7 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
     name = "goldie_playwright_parallel"
     allowed_domains = ["inspection.gc.ca", "inspection.canada.ca"]
-    start_urls = ["https://inspection.canada.ca/en"]
+    start_urls = ["https://inspection.canada.ca/"]
 
     # Playwright settings specific to this site
     playwright_wait_until = "networkidle"

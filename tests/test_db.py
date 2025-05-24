@@ -45,6 +45,10 @@ class TestDBLayer(unittest.TestCase):
                 "lang": "fr",
                 "html_content": "<html><body><p>Test Text Content</p></body></html>",
                 "last_updated": "2023-06-01",
-                "last_crawled": time.time()
+                "last_crawled": time.time(),
+                "children": [
+                    "https://inspection.canada.ca/child1",
+                    "https://inspection.canada.ca/child2"
+                ]
             }))
             self.connection.rollback()
