@@ -1,0 +1,6 @@
+# MinIO Python SDK for S3-compatible object storage
+minio>=7.0.0
+
+# Optional: Keep existing dependencies if they exist
+# psycopg[binary]>=3.0.0  # For PostgreSQL support
+# (add other existing dependencies as needed) 

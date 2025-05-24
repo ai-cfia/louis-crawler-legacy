@@ -2,11 +2,13 @@
 
 This module provides database connectivity and operations for storing
 crawled data, chunks, and embeddings using PostgreSQL.
-It also supports storing HTML content and metadata to disk as files.
+It also supports storing HTML content and metadata to disk as files,
+and to S3-compatible object storage using MinIO.
 """
 import os
 import json
 import uuid
+import io
 from contextlib import contextmanager
 from urllib.parse import urlencode, urlparse, parse_qs
 from pathlib import Path
@@ -20,18 +22,36 @@ except ImportError:
     PSYCOPG_AVAILABLE = False
     print("Warning: psycopg not available. Database storage disabled.")
 
+# Make MinIO import optional for non-S3 storage
+try:
+    from minio import Minio
+    from minio.error import S3Error
+    MINIO_AVAILABLE = True
+except ImportError:
+    MINIO_AVAILABLE = False
+    print("Warning: minio not available. S3 storage disabled.")
+
 
 def get_storage_mode():
     """Get the storage mode from environment variables.
     
     Returns:
-        str: 'database', 'disk', or 'both'
+        str: 'database', 'disk', or 's3'
     """
     mode = os.getenv('STORAGE_MODE', 'database').lower()
     
-    # Force disk mode if psycopg is not available
-    if not PSYCOPG_AVAILABLE and mode in ['database', 'both']:
-        print(f"Warning: psycopg not available, forcing disk storage mode")
+    # Validate and fallback for unavailable dependencies
+    if mode == 'database' and not PSYCOPG_AVAILABLE:
+        print("Warning: psycopg not available, falling back to disk storage")
+        return 'disk'
+    
+    if mode == 's3' and not MINIO_AVAILABLE:
+        print("Warning: minio not available, falling back to disk storage")
+        return 'disk'
+    
+    # Only allow simple storage modes
+    if mode not in ['database', 'disk', 's3']:
+        print(f"Warning: invalid storage mode '{mode}', falling back to disk")
         return 'disk'
     
     return mode
@@ -45,6 +65,53 @@ def get_storage_directory():
     """
     storage_dir = os.getenv('STORAGE_DIRECTORY', 'storage')
     return Path(storage_dir)
+
+
+def get_s3_config():
+    """Get S3 configuration from environment variables.
+    
+    Returns:
+        dict: S3 configuration with endpoint, access_key, secret_key, bucket_name, secure
+    """
+    return {
+        'endpoint': os.getenv('S3_ENDPOINT', 'localhost:9000'),
+        'access_key': os.getenv('S3_ACCESS_KEY', 'minioadmin'),
+        'secret_key': os.getenv('S3_SECRET_KEY', 'minioadmin'),
+        'bucket_name': os.getenv('S3_BUCKET_NAME', 'louis-crawler'),
+        'secure': os.getenv('S3_SECURE', 'false').lower() == 'true'
+    }
+
+
+def get_s3_client():
+    """Create and return a MinIO client.
+    
+    Returns:
+        Minio: MinIO client instance or None if not available
+    """
+    if not MINIO_AVAILABLE:
+        print("Warning: Cannot create S3 client - minio not available")
+        return None
+    
+    config = get_s3_config()
+    
+    try:
+        client = Minio(
+            config['endpoint'],
+            access_key=config['access_key'],
+            secret_key=config['secret_key'],
+            secure=config['secure']
+        )
+        
+        # Ensure bucket exists
+        bucket_name = config['bucket_name']
+        if not client.bucket_exists(bucket_name):
+            client.make_bucket(bucket_name)
+            print(f"Created S3 bucket: {bucket_name}")
+        
+        return client
+    except Exception as e:
+        print(f"Warning: Failed to create S3 client: {e}")
+        return None
 
 
 def ensure_storage_directories():
@@ -152,6 +219,145 @@ def list_stored_items():
         except (json.JSONDecodeError, IOError):
             # Skip corrupted files
             continue
+    
+    return sorted(items, key=lambda x: x.get('last_crawled', 0), reverse=True)
+
+
+def store_to_s3(item):
+    """Store a CrawlItem to S3 as HTML and JSON files.
+    
+    Args:
+        item: CrawlItem object with fields: url, title, lang, html_content, 
+              last_crawled, last_updated
+              
+    Returns:
+        dict: The stored item with generated id and S3 object names
+    """
+    client = get_s3_client()
+    if not client:
+        raise Exception("S3 client not available")
+    
+    config = get_s3_config()
+    bucket_name = config['bucket_name']
+    
+    # Generate UUID for filenames
+    file_uuid = str(uuid.uuid4())
+    
+    # Prepare metadata (everything except html_content)
+    metadata = {
+        'id': file_uuid,
+        'url': item.get('url'),
+        'title': item.get('title'),
+        'lang': item.get('lang'),
+        'last_crawled': item.get('last_crawled'),
+        'last_updated': item.get('last_updated'),
+        'html_object': f"html/{file_uuid}.html",
+        'metadata_object': f"metadata/{file_uuid}.json",
+        'bucket_name': bucket_name
+    }
+    
+    # Store HTML content to S3
+    html_content = item.get('html_content', '')
+    html_data = io.BytesIO(html_content.encode('utf-8'))
+    client.put_object(
+        bucket_name,
+        f"html/{file_uuid}.html",
+        html_data,
+        length=len(html_content.encode('utf-8')),
+        content_type='text/html'
+    )
+    
+    # Store metadata JSON to S3
+    metadata_json = json.dumps(metadata, indent=2, ensure_ascii=False)
+    metadata_data = io.BytesIO(metadata_json.encode('utf-8'))
+    client.put_object(
+        bucket_name,
+        f"metadata/{file_uuid}.json",
+        metadata_data,
+        length=len(metadata_json.encode('utf-8')),
+        content_type='application/json'
+    )
+    
+    return metadata
+
+
+def load_from_s3(file_uuid):
+    """Load a CrawlItem from S3 using its UUID.
+    
+    Args:
+        file_uuid: UUID string for the objects
+        
+    Returns:
+        dict: The item data with html_content loaded, or None if not found
+    """
+    client = get_s3_client()
+    if not client:
+        print("Warning: S3 client not available")
+        return None
+    
+    config = get_s3_config()
+    bucket_name = config['bucket_name']
+    
+    try:
+        # Load metadata from S3
+        metadata_obj = client.get_object(bucket_name, f"metadata/{file_uuid}.json")
+        metadata_content = metadata_obj.read().decode('utf-8')
+        metadata = json.loads(metadata_content)
+        
+        # Load HTML content from S3
+        html_obj = client.get_object(bucket_name, f"html/{file_uuid}.html")
+        html_content = html_obj.read().decode('utf-8')
+        
+        # Combine metadata and HTML content
+        result = metadata.copy()
+        result['html_content'] = html_content
+        
+        return result
+        
+    except S3Error as e:
+        if e.code == 'NoSuchKey':
+            return None
+        else:
+            print(f"S3 error loading {file_uuid}: {e}")
+            return None
+    except Exception as e:
+        print(f"Error loading from S3: {e}")
+        return None
+
+
+def list_s3_items():
+    """List all stored items in S3.
+    
+    Returns:
+        list: List of metadata dictionaries for all stored items
+    """
+    client = get_s3_client()
+    if not client:
+        print("Warning: S3 client not available")
+        return []
+    
+    config = get_s3_config()
+    bucket_name = config['bucket_name']
+    
+    items = []
+    try:
+        # List all metadata objects (which contain the full metadata)
+        for obj in client.list_objects(bucket_name, prefix='metadata/', recursive=True):
+            if obj.object_name.endswith('.json'):
+                try:
+                    # Load metadata
+                    metadata_obj = client.get_object(bucket_name, obj.object_name)
+                    metadata_content = metadata_obj.read().decode('utf-8')
+                    metadata = json.loads(metadata_content)
+                    items.append(metadata)
+                except (json.JSONDecodeError, S3Error) as e:
+                    # Skip corrupted or inaccessible objects
+                    print(f"Warning: Failed to load metadata from {obj.object_name}: {e}")
+                    continue
+                    
+    except S3Error as e:
+        print(f"Error listing S3 objects: {e}")
+        return []
     
     return sorted(items, key=lambda x: x.get('last_crawled', 0), reverse=True)
 
@@ -301,7 +507,7 @@ def store_crawl_item(cur, item):
     """Store a CrawlItem using the configured storage mode.
     
     Args:
-        cur: Database cursor (may be None if disk-only mode)
+        cur: Database cursor (may be None for non-database modes)
         item: CrawlItem object with fields: url, title, lang, html_content, 
               last_crawled, last_updated
               
@@ -309,34 +515,30 @@ def store_crawl_item(cur, item):
         dict: The stored item with generated id
     """
     storage_mode = get_storage_mode()
-    result = None
     
-    if storage_mode in ['database', 'both']:
-        # Store to database
+    if storage_mode == 'database':
         if cur is not None:
-            result = store_crawl_item_to_database(cur, item)
+            return store_crawl_item_to_database(cur, item)
         else:
             print("Warning: Database cursor is None but database storage is requested")
+            # Fallback to disk
+            return store_to_disk(item)
     
-    if storage_mode in ['disk', 'both']:
-        # Store to disk
-        disk_result = store_to_disk(item)
-        if result is None:
-            result = disk_result
-        else:
-            # Merge results if storing to both
-            result.update({
-                'disk_id': disk_result['id'],
-                'html_file_path': disk_result['html_file_path'],
-                'metadata_file_path': disk_result['metadata_file_path']
-            })
+    elif storage_mode == 'disk':
+        return store_to_disk(item)
     
-    if result is None:
-        # Fallback to database if no valid storage mode
-        print(f"Warning: Invalid storage mode '{storage_mode}', falling back to database")
-        result = store_crawl_item_to_database(cur, item)
+    elif storage_mode == 's3':
+        try:
+            return store_to_s3(item)
+        except Exception as e:
+            print(f"Warning: Failed to store to S3: {e}")
+            # Fallback to disk
+            return store_to_disk(item)
     
-    return result
+    else:
+        # This shouldn't happen due to validation in get_storage_mode()
+        print(f"Warning: Unknown storage mode '{storage_mode}', falling back to disk")
+        return store_to_disk(item)
 
 
 def store_chunk_item(cur, item):
@@ -498,35 +700,33 @@ def create_postgresql_url(dbname, table, item_id, params=None):
 
 
 def initialize_database():
-    """Initialize the database with required tables.
+    """Initialize the storage system based on the configured mode.
     
-    This function should be called once to set up the database schema.
+    This function should be called once to set up the storage system.
     """
     storage_mode = get_storage_mode()
     
-    if storage_mode in ['database', 'both']:
+    if storage_mode == 'database':
         if not PSYCOPG_AVAILABLE:
             print("❌ Database storage requested but psycopg not available")
-            if storage_mode == 'database':
-                print("💡 Hint: Install psycopg with 'uv pip install psycopg psycopg-binary' or use STORAGE_MODE=disk")
-                return
-        else:
-            try:
-                connection = connect_db()
-                if connection:
-                    try:
-                        create_tables(connection)
-                        print("✅ Database initialized successfully")
-                    finally:
-                        connection.close()
-                else:
-                    print("❌ Failed to connect to database")
-            except Exception as e:
-                print(f"❌ Database initialization failed: {e}")
-                if storage_mode == 'database':
-                    raise
+            print("💡 Hint: Install psycopg with 'uv pip install psycopg psycopg-binary' or use STORAGE_MODE=disk or STORAGE_MODE=s3")
+            return
+        try:
+            connection = connect_db()
+            if connection:
+                try:
+                    create_tables(connection)
+                    print("✅ Database initialized successfully")
+                finally:
+                    connection.close()
+            else:
+                print("❌ Failed to connect to database")
+                raise Exception("Database connection failed")
+        except Exception as e:
+            print(f"❌ Database initialization failed: {e}")
+            raise
     
-    if storage_mode in ['disk', 'both']:
+    elif storage_mode == 'disk':
         try:
             ensure_storage_directories()
             storage_dir = get_storage_directory()
@@ -534,6 +734,27 @@ def initialize_database():
         except Exception as e:
             print(f"❌ Disk storage initialization failed: {e}")
             raise
+    
+    elif storage_mode == 's3':
+        if not MINIO_AVAILABLE:
+            print("❌ S3 storage requested but minio not available")
+            print("💡 Hint: Install minio with 'uv pip install minio' or use STORAGE_MODE=disk or STORAGE_MODE=database")
+            return
+        try:
+            client = get_s3_client()
+            if client:
+                config = get_s3_config()
+                print(f"✅ S3 storage initialized successfully (bucket: {config['bucket_name']})")
+            else:
+                print("❌ Failed to initialize S3 client")
+                raise Exception("S3 client initialization failed")
+        except Exception as e:
+            print(f"❌ S3 storage initialization failed: {e}")
+            raise
+    
+    else:
+        print(f"❌ Unknown storage mode: {storage_mode}")
+        raise Exception(f"Invalid storage mode: {storage_mode}")
     
     print(f"Storage mode: {storage_mode}")
 
