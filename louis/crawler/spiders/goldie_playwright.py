@@ -5,12 +5,38 @@ Playwright-enabled version of the goldie spider for JavaScript-rendered content.
 import re
 import time
 import os
+from datetime import datetime
 from louis.crawler.spiders.base_playwright import (
     PlaywrightSpider,
     SmartPlaywrightSpider,
 )
 from louis.crawler.items import CrawlItem
 from louis.crawler.requests import extract_urls, fix_vhost
+
+
+def generate_timestamped_filename(base_name: str, extension: str = "log") -> str:
+    """Generate a filename with timestamp suffix in format _yyyymmddhhmmss.
+    
+    Args:
+        base_name: Base name without extension (e.g., 'logs/scraped_urls')
+        extension: File extension (e.g., 'txt'). If None, will extract from base_name
+    
+    Returns:
+        str: Filename with timestamp suffix (e.g., 'logs/scraped_urls_20250115153045.txt')
+    """
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    
+    if extension is None:
+        # Try to extract extension from base_name
+        if '.' in base_name:
+            base_name, extension = base_name.rsplit('.', 1)
+        else:
+            extension = ''
+    
+    if extension:
+        return f"{base_name}_{timestamp}.{extension}"
+    else:
+        return f"{base_name}_{timestamp}"
 
 
 class GoldiePlaywrightSpider(PlaywrightSpider):
@@ -31,9 +57,9 @@ class GoldiePlaywrightSpider(PlaywrightSpider):
     def __init__(
         self,
         max_depth=1,
-        scraped_urls_file="logs/scraped_urls.txt",
-        pending_urls_file="logs/pending_urls.txt",
-        errored_urls_file="logs/errored_urls.txt",
+        scraped_urls_file=None,
+        pending_urls_file=None,
+        errored_urls_file=None,
         *args,
         **kwargs,
     ):
@@ -48,9 +74,12 @@ class GoldiePlaywrightSpider(PlaywrightSpider):
         """
         super().__init__(*args, **kwargs)
         self.max_depth = int(max_depth)
-        self.scraped_urls_file = scraped_urls_file
-        self.pending_urls_file = pending_urls_file
-        self.errored_urls_file = errored_urls_file
+        
+        # Generate timestamped filenames if not provided
+        self.scraped_urls_file = scraped_urls_file or generate_timestamped_filename("logs/scraped_urls")
+        self.pending_urls_file = pending_urls_file or generate_timestamped_filename("logs/pending_urls")
+        self.errored_urls_file = errored_urls_file or generate_timestamped_filename("logs/errored_urls")
+        
         self.scraped_urls = set()
         self.pending_urls = set()
         self.errored_urls = set()

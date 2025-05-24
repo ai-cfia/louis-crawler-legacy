@@ -265,6 +265,31 @@ def clean_content_worker(response) -> str:
         return ""
 
 
+def generate_timestamped_filename(base_name: str, extension: str = "log") -> str:
+    """Generate a filename with timestamp suffix in format _yyyymmddhhmmss.
+    
+    Args:
+        base_name: Base name without extension (e.g., 'logs/crawler_parallel')
+        extension: File extension (e.g., 'log'). If None, will extract from base_name
+    
+    Returns:
+        str: Filename with timestamp suffix (e.g., 'logs/crawler_parallel_20250115153045.log')
+    """
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    
+    if extension is None:
+        # Try to extract extension from base_name
+        if '.' in base_name:
+            base_name, extension = base_name.rsplit('.', 1)
+        else:
+            extension = ''
+    
+    if extension:
+        return f"{base_name}_{timestamp}.{extension}"
+    else:
+        return f"{base_name}_{timestamp}"
+
+
 class GoldiePlaywrightParallelSpider(PlaywrightSpider):
     """
     Parallel version of Goldie spider with multiprocessing support for JavaScript-rendered content.
@@ -282,7 +307,7 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
     # Custom settings to ensure all logging goes to files
     custom_settings = {
-        'LOG_FILE': 'logs/scrapy.log',
+        'LOG_FILE': generate_timestamped_filename('logs/scrapy', 'log'),
         'LOG_LEVEL': 'INFO',
         'LOG_STDOUT': False,  # Don't log to stdout
         'ITEM_PIPELINES': {
@@ -295,10 +320,10 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
         max_depth=1,
         num_workers=None,
         batch_size=10,
-        scraped_urls_file="logs/scraped_urls.txt",
-        pending_urls_file="logs/pending_urls.txt",
-        errored_urls_file="logs/errored_urls.txt",
-        log_file="logs/crawler_parallel.log",
+        scraped_urls_file=None,
+        pending_urls_file=None,
+        errored_urls_file=None,
+        log_file=None,
         *args,
         **kwargs,
     ):
@@ -318,10 +343,12 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
         self.max_depth = int(max_depth)
         self.num_workers = int(num_workers) if num_workers else 2
         self.batch_size = int(batch_size)
-        self.scraped_urls_file = scraped_urls_file
-        self.pending_urls_file = pending_urls_file
-        self.errored_urls_file = errored_urls_file
-        self.log_file = log_file
+        
+        # Generate timestamped filenames if not provided
+        self.scraped_urls_file = scraped_urls_file or generate_timestamped_filename("logs/scraped_urls")
+        self.pending_urls_file = pending_urls_file or generate_timestamped_filename("logs/pending_urls")
+        self.errored_urls_file = errored_urls_file or generate_timestamped_filename("logs/errored_urls")
+        self.log_file = log_file or generate_timestamped_filename("logs/crawler_parallel")
 
         # Ensure logs directory exists
         self._ensure_directories()

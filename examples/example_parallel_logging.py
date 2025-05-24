@@ -19,10 +19,10 @@ def main():
     print("Method 2: Using standard Scrapy CLI:")
     print("    scrapy crawl goldie_playwright_parallel -a max_depth=2 -a num_workers=4")
     print()
-    print("Starting parallel crawler with shared logging...")
-    print("Log file: logs/crawler_parallel.log")
-    print("All worker processes will write to the same log file with unique task IDs")
-    print("You can monitor progress with: tail -f logs/crawler_parallel.log")
+    print("Starting parallel crawler with timestamped logging...")
+    print("Note: Log files now automatically include timestamps (format: _yyyymmddhhmmss)")
+    print("Example: logs/scrapy_20250115153045.log, logs/crawler_parallel_20250115153045.log")
+    print("You can still specify custom filenames if needed.")
     print()
     
     # Configure the spider settings
@@ -45,17 +45,32 @@ def main():
     # Create crawler process
     process = CrawlerProcess(settings)
     
-    # Add spider with custom parameters
+    # Example 1: Use automatic timestamped filenames (recommended)
+    print("Example 1: Using automatic timestamped filenames...")
     process.crawl(
         GoldiePlaywrightParallelSpider,
         max_depth=2,                           # Crawl up to depth 2
         num_workers=4,                         # Use 4 worker processes
         batch_size=8,                          # Process 8 URLs per batch
-        scraped_urls_file="logs/scraped_urls.txt",  # Track scraped URLs
-        pending_urls_file="logs/pending_urls.txt",  # Track pending URLs
-        errored_urls_file="logs/errored_urls.txt",  # Track failed URLs
-        log_file="logs/crawler_parallel.log"        # Shared log file for all processes
+        # Files will be automatically timestamped:
+        # - logs/scraped_urls_20250115153045.txt
+        # - logs/pending_urls_20250115153045.txt  
+        # - logs/errored_urls_20250115153045.txt
+        # - logs/crawler_parallel_20250115153045.log
     )
+    
+    # Example 2: Use custom filenames (uncomment to use instead)
+    # print("Example 2: Using custom filenames...")
+    # process.crawl(
+    #     GoldiePlaywrightParallelSpider,
+    #     max_depth=2,                           # Crawl up to depth 2
+    #     num_workers=4,                         # Use 4 worker processes
+    #     batch_size=8,                          # Process 8 URLs per batch
+    #     scraped_urls_file="logs/scraped_urls.txt",  # Custom filename
+    #     pending_urls_file="logs/pending_urls.txt",  # Custom filename
+    #     errored_urls_file="logs/errored_urls.txt",  # Custom filename
+    #     log_file="logs/crawler_parallel.log"        # Custom filename
+    # )
     
     # Start crawling
     process.start()

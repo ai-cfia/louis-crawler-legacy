@@ -43,33 +43,58 @@ All parameters can be passed using the `-a` flag:
 | `max_depth` | 1 | Maximum crawl depth (0 = start URLs only) |
 | `num_workers` | CPU count | Number of worker processes |
 | `batch_size` | 10 | URLs processed per batch |
-| `scraped_urls_file` | "logs/scraped_urls.txt" | Track completed URLs |
-| `pending_urls_file` | "logs/pending_urls.txt" | Track pending URLs |
-| `errored_urls_file` | "logs/errored_urls.txt" | Track failed URLs |
-| `log_file` | "logs/crawler_parallel.log" | Shared worker log file |
+| `scraped_urls_file` | Auto-timestamped | Track completed URLs (e.g., "logs/scraped_urls_20250115153045.txt") |
+| `pending_urls_file` | Auto-timestamped | Track pending URLs (e.g., "logs/pending_urls_20250115153045.txt") |
+| `errored_urls_file` | Auto-timestamped | Track failed URLs (e.g., "logs/errored_urls_20250115153045.txt") |
+| `log_file` | Auto-timestamped | Shared worker log file (e.g., "logs/crawler_parallel_20250115153045.log") |
 
 ## Logging System
 
 ### Default Logging Behavior
-The spider automatically configures logging with no console output for clean execution:
+The spider automatically configures logging with timestamped filenames and no console output for clean execution:
 
-- **Scrapy logs**: `logs/scrapy.log` (main spider lifecycle, stats, errors)
-- **Worker logs**: `logs/crawler_parallel.log` (task-specific processing with task IDs)
+- **Scrapy logs**: Auto-timestamped (e.g., `logs/scrapy_20250115153045.log`) - main spider lifecycle, stats, errors
+- **Worker logs**: Auto-timestamped (e.g., `logs/crawler_parallel_20250115153045.log`) - task-specific processing with task IDs
 - **Console output**: Disabled by default
 
 ### File Structure
 ```
 logs/
-├── scrapy.log                 # Main Scrapy log (spider lifecycle, stats, errors)
-├── crawler_parallel.log       # Worker process logs with task IDs
-├── scraped_urls.txt           # Successfully processed URLs
-├── pending_urls.txt           # URLs waiting to be processed
-└── errored_urls.txt           # URLs that failed processing
+├── scrapy_20250115153045.log                 # Main Scrapy log (spider lifecycle, stats, errors)
+├── crawler_parallel_20250115153045.log       # Worker process logs with task IDs
+├── scraped_urls_20250115153045.txt           # Successfully processed URLs
+├── pending_urls_20250115153045.txt           # URLs waiting to be processed
+└── errored_urls_20250115153045.txt           # URLs that failed processing
+```
+
+**Note**: All log files are automatically timestamped when the spider starts, using the format `_yyyymmddhhmmss` (year, month, day, hour, minute, second). This ensures that multiple runs don't overwrite previous logs and makes it easy to track different crawling sessions.
+
+### Working with Timestamped Files
+
+Since files are now timestamped, here are some useful commands for working with them:
+
+```bash
+# Find the latest log files
+ls -t logs/scrapy_*.log | head -1           # Latest Scrapy log
+ls -t logs/crawler_parallel_*.log | head -1 # Latest worker log
+ls -t logs/scraped_urls_*.txt | head -1     # Latest scraped URLs
+
+# Monitor the latest log files
+tail -f $(ls -t logs/scrapy_*.log | head -1)
+tail -f $(ls -t logs/crawler_parallel_*.log | head -1)
+
+# View all log files from a specific date
+ls logs/*_20250115*.log                     # All logs from Jan 15, 2025
+ls logs/*_202501*.log                       # All logs from January 2025
+
+# Clean up old logs (keep only last 10)
+ls -t logs/scrapy_*.log | tail -n +11 | xargs rm -f
+ls -t logs/crawler_parallel_*.log | tail -n +11 | xargs rm -f
 ```
 
 ### Log Contents
 
-#### `logs/scrapy.log` - Main Spider Log
+#### `logs/scrapy_TIMESTAMP.log` - Main Spider Log
 ```
 2025-01-15 15:16:35 [scrapy.utils.log] INFO: Scrapy 2.13.0 started (bot: louis)
 2025-01-15 15:16:35 [goldie_playwright_parallel] INFO: Parallel spider initialized:
@@ -77,7 +102,7 @@ logs/
 2025-01-15 15:16:45 [scrapy.core.engine] INFO: Spider closed (finished)
 ```
 
-#### `logs/crawler_parallel.log` - Worker Process Log
+#### `logs/crawler_parallel_TIMESTAMP.log` - Worker Process Log
 ```
 2025-01-15 15:30:01,123 [PID:12345] [ForkProcess-1] INFO: [TASK:abc12345] Processing URL (depth 1): https://example.com/page1
 2025-01-15 15:30:01,345 [PID:12345] [ForkProcess-1] INFO: [TASK:abc12345] Navigating to https://example.com/page1
@@ -180,32 +205,32 @@ scrapy crawl goldie_playwright_parallel --loglevel ERROR
 ### Real-time Monitoring
 ```bash
 # Monitor main spider log
-tail -f logs/scrapy.log
+tail -f logs/scrapy_TIMESTAMP.log
 
 # Monitor worker processes  
-tail -f logs/crawler_parallel.log
+tail -f logs/crawler_parallel_TIMESTAMP.log
 
 # Monitor both simultaneously
-tail -f logs/scrapy.log logs/crawler_parallel.log
+tail -f logs/scrapy_TIMESTAMP.log logs/crawler_parallel_TIMESTAMP.log
 
 # Start crawl in background and monitor logs
 scrapy crawl goldie_playwright_parallel -a max_depth=2 &
-tail -f logs/crawler_parallel.log
+tail -f logs/crawler_parallel_TIMESTAMP.log
 ```
 
 ### Log Analysis
 ```bash
 # Analyze completed crawl
-python log_analyzer.py logs/crawler_parallel.log
+python log_analyzer.py logs/crawler_parallel_TIMESTAMP.log
 
 # Check specific task
-python log_analyzer.py logs/crawler_parallel.log abc12345
+python log_analyzer.py logs/crawler_parallel_TIMESTAMP.log abc12345
 
 # Find task IDs
-grep -o "TASK:[a-f0-9]\{8\}" logs/crawler_parallel.log | sort | uniq
+grep -o "TASK:[a-f0-9]\{8\}" logs/crawler_parallel_TIMESTAMP.log | sort | uniq
 
 # Check spider statistics
-grep "statistics" logs/scrapy.log
+grep "statistics" logs/scrapy_TIMESTAMP.log
 
 # Find errors across all logs
 grep -i error logs/*.log
@@ -214,13 +239,13 @@ grep -i error logs/*.log
 ### Performance Analysis
 ```bash
 # Check processing status
-grep "Successfully processed" logs/crawler_parallel.log | wc -l
+grep "Successfully processed" logs/crawler_parallel_TIMESTAMP.log | wc -l
 
 # Find errors
-grep "Error processing" logs/crawler_parallel.log
+grep "Error processing" logs/crawler_parallel_TIMESTAMP.log
 
 # Check worker distribution
-grep "PID:" logs/crawler_parallel.log | cut -d']' -f1 | sort | uniq -c
+grep "PID:" logs/crawler_parallel_TIMESTAMP.log | cut -d']' -f1 | sort | uniq -c
 ```
 
 ## Key Features
@@ -260,16 +285,16 @@ https://inspection.canada.ca/en/animal-health
 ### Managing URL Files
 ```bash
 # View scraped URLs
-cat logs/scraped_urls.txt
+cat logs/scraped_urls_TIMESTAMP.txt
 
 # Count scraped URLs
-wc -l logs/scraped_urls.txt
+wc -l logs/scraped_urls_TIMESTAMP.txt
 
 # Clear URL history (start fresh)
-rm logs/scraped_urls.txt
+rm logs/scraped_urls_TIMESTAMP.txt
 
 # Backup URL file
-cp logs/scraped_urls.txt logs/scraped_urls_backup.txt
+cp logs/scraped_urls_TIMESTAMP.txt logs/scraped_urls_TIMESTAMP_backup.txt
 ```
 
 ### Resume Interrupted Crawls
@@ -294,7 +319,7 @@ ls -la logs/
 ```bash
 # Force file-only logging
 scrapy crawl goldie_playwright_parallel \
-    --logfile logs/scrapy.log \
+    --logfile logs/scrapy_TIMESTAMP.log \
     --loglevel INFO \
     -s LOG_STDOUT=False
 ```
@@ -305,8 +330,8 @@ scrapy crawl goldie_playwright_parallel \
 du -h logs/*.log
 
 # Rotate logs (manual)
-mv logs/scrapy.log logs/scrapy.log.old
-mv logs/crawler_parallel.log logs/crawler_parallel.log.old
+mv logs/scrapy_TIMESTAMP.log logs/scrapy_TIMESTAMP.log.old
+mv logs/crawler_parallel_TIMESTAMP.log logs/crawler_parallel_TIMESTAMP.log.old
 ```
 
 ### Common Issues
