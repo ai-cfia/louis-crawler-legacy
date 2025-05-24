@@ -400,4 +400,4 @@ ls -lh logs/*.log
 
 # Clean up old files
 find . -name "logs/*.txt" -mtime +30 -delete
-``` 
+```

@@ -23,4 +23,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
         print("\nPlease check your database connection settings and try again.")
-        sys.exit(1) 
+        sys.exit(1)

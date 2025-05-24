@@ -160,4 +160,4 @@ import os
 print("S3 Configuration:")
 for key in ['STORAGE_MODE', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET_NAME', 'S3_SECURE']:
     print(f"  {key}={os.getenv(key, 'NOT SET')}")
-``` 
+```

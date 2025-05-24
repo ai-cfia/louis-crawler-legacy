@@ -45,4 +45,4 @@ Each spider has a specific role in the pipeline, working together to transform w
 
 ## Getting Started
 
-For detailed information about each component, start with [crawler-files.md](./crawler-files.md). 
+For detailed information about each component, start with [crawler-files.md](./crawler-files.md).

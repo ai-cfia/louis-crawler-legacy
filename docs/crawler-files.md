@@ -167,4 +167,4 @@ This document explains the purpose and functionality of each file in the `louis/
 2. **`hawn`** → Processes HTML → Creates semantic chunks (`ChunkItem`) 
 3. **`kurt`** → Generates embeddings → Stores vectors (`EmbeddingItem`)
 
-This pipeline enables the system to crawl government websites, process content for AI consumption, and generate embeddings for semantic search and retrieval. 
+This pipeline enables the system to crawl government websites, process content for AI consumption, and generate embeddings for semantic search and retrieval.
