@@ -6,6 +6,7 @@ Uses multiprocessing to utilize multiple CPU cores for concurrent crawling.
 import re
 import time
 import os
+import signal
 import multiprocessing as mp
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List, Set, Tuple, Dict, Any
@@ -22,10 +23,20 @@ from louis.crawler.spiders.base_playwright import (
 )
 from louis.crawler.items import CrawlItem
 from louis.crawler.requests import extract_urls, fix_vhost
+import louis.db as db
 
 
 def init_worker(log_file_path=None, use_console=True):
     """Initialize worker process - set up logging and any required resources."""
+    # Set up signal handlers for worker processes
+    def worker_signal_handler(signum, frame):
+        signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM"
+        logging.getLogger().info(f"Worker received {signal_name}, exiting gracefully...")
+        # Allow current operation to complete but don't start new ones
+        
+    signal.signal(signal.SIGINT, worker_signal_handler)
+    signal.signal(signal.SIGTERM, worker_signal_handler)
+    
     # Configure logging for worker processes to write to shared file
     if log_file_path:
         handlers = [logging.FileHandler(log_file_path)]
@@ -290,6 +301,34 @@ def generate_timestamped_filename(base_name: str, extension: str = "log") -> str
         return f"{base_name}_{timestamp}"
 
 
+def get_pipeline_config_for_storage_mode():
+    """Get the appropriate pipeline configuration based on STORAGE_MODE environment variable.
+    
+    Returns:
+        dict: Pipeline configuration dictionary
+    """
+    storage_mode = db.get_storage_mode()
+    
+    if storage_mode == 'database':
+        return {
+            'louis.crawler.pipelines.LouisPipeline': 300,
+        }
+    elif storage_mode == 'disk':
+        return {
+            'louis.crawler.pipelines.DiskPipeline': 300,
+        }
+    elif storage_mode == 's3':
+        return {
+            'louis.crawler.pipelines.S3Pipeline': 300,
+        }
+    else:
+        # Fallback to database pipeline for unknown modes
+        print(f"Warning: Unknown storage mode '{storage_mode}', falling back to database pipeline")
+        return {
+            'louis.crawler.pipelines.LouisPipeline': 300,
+        }
+
+
 class GoldiePlaywrightParallelSpider(PlaywrightSpider):
     """
     Parallel version of Goldie spider with multiprocessing support for JavaScript-rendered content.
@@ -306,13 +345,12 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
     playwright_wait_time = 10  # Wait 3 seconds for any final JS execution
 
     # Custom settings to ensure all logging goes to files
+    # Pipeline is dynamically selected based on STORAGE_MODE environment variable
     custom_settings = {
         'LOG_FILE': generate_timestamped_filename('logs/scrapy', 'log'),
         'LOG_LEVEL': 'INFO',
         'LOG_STDOUT': False,  # Don't log to stdout
-        'ITEM_PIPELINES': {
-            'louis.crawler.pipelines.LouisPipeline': 300,
-        },
+        'ITEM_PIPELINES': get_pipeline_config_for_storage_mode(),
     }
 
     def __init__(
@@ -344,6 +382,9 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
         self.num_workers = int(num_workers) if num_workers else 2
         self.batch_size = int(batch_size)
         
+        # Shutdown flag for graceful termination
+        self.shutdown_requested = False
+        
         # Generate timestamped filenames if not provided
         self.scraped_urls_file = scraped_urls_file or generate_timestamped_filename("logs/scraped_urls")
         self.pending_urls_file = pending_urls_file or generate_timestamped_filename("logs/pending_urls")
@@ -352,6 +393,9 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
         # Ensure logs directory exists
         self._ensure_directories()
+
+        # Set up signal handlers for graceful shutdown
+        self._setup_signal_handlers()
 
         # Set up shared logging for main process (only if not already configured by Scrapy)
         self._setup_main_logging()
@@ -623,6 +667,33 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
                 # Collect results as they complete
                 for future in as_completed(future_to_url):
+                    # Check for shutdown request
+                    if self.shutdown_requested:
+                        self.logger.info("Shutdown requested, cancelling remaining tasks...")
+                        
+                        # Cancel all pending futures
+                        for f in future_to_url:
+                            if not f.done():
+                                f.cancel()
+                        
+                        # Shutdown executor immediately
+                        executor.shutdown(wait=False)
+                        
+                        # Add partial results for URLs that didn't complete
+                        completed_urls = {future_to_url[r] for r in results}
+                        for f, url in future_to_url.items():
+                            if url not in completed_urls and not f.done():
+                                results.append({
+                                    "url": url,
+                                    "success": False,
+                                    "error": "Cancelled due to shutdown",
+                                    "processing_time": 0,
+                                    "depth": next((depth for u, depth in batch if u == url), 0)
+                                })
+                        
+                        self.logger.info(f"Cancelled batch processing with {len(results)} partial results")
+                        return results
+                    
                     url = future_to_url[future]
                     try:
                         result = future.result(timeout=60)  # 60 second timeout per URL
@@ -643,11 +714,14 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
                                 "success": False,
                                 "error": str(e),
                                 "processing_time": 0,
+                                "depth": next((depth for u, depth in batch if u == url), 0)
                             }
                         )
 
         except Exception as e:
             self.logger.error(f"Error in parallel processing: {e}")
+            if self.shutdown_requested:
+                self.logger.info("Error occurred during shutdown, this is expected.")
 
         return results
 
@@ -660,6 +734,11 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
         # Main processing loop
         while True:
+            # Check for shutdown request
+            if self.shutdown_requested:
+                self.logger.info("Shutdown requested, exiting main processing loop...")
+                break
+                
             # Get next batch of URLs to process
             batch = self._get_next_batch()
 
@@ -669,6 +748,13 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
             # Process batch in parallel
             results = self.process_batch_parallel(batch)
+            
+            # If shutdown was requested during processing, handle gracefully
+            if self.shutdown_requested:
+                self.logger.info("Processing shutdown request...")
+                # Still process any completed results
+                if results:
+                    self.logger.info(f"Processing {len(results)} completed results before shutdown...")
 
             # Process results
             processed_urls = []
@@ -693,15 +779,16 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
                         yield CrawlItem(result["item"])
                         items_yielded += 1
 
-                    # Add new links to pending if within depth limit
-                    next_depth = depth + 1
-                    if next_depth <= self.max_depth:
-                        for link_url in result["links"]:
-                            if (
-                                link_url not in self.scraped_urls
-                                and link_url not in self.errored_urls
-                            ):
-                                new_pending_urls.append((link_url, next_depth))
+                    # Add new links to pending if within depth limit and not shutting down
+                    if not self.shutdown_requested:
+                        next_depth = depth + 1
+                        if next_depth <= self.max_depth:
+                            for link_url in result["links"]:
+                                if (
+                                    link_url not in self.scraped_urls
+                                    and link_url not in self.errored_urls
+                                ):
+                                    new_pending_urls.append((link_url, next_depth))
 
                     self.total_processed += 1
                     self.total_items += 1
@@ -725,7 +812,7 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
                 self._save_errored_urls_batch(errored_urls)
                 self._remove_pending_urls_batch(errored_urls)
 
-            if new_pending_urls:
+            if new_pending_urls and not self.shutdown_requested:
                 self._add_pending_urls_batch(new_pending_urls)
 
             # Log progress
@@ -735,6 +822,11 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
             self.logger.info(
                 f"Progress: {self.total_processed} processed, {self.total_errors} errors, {len(self.pending_urls)} pending"
             )
+            
+            # Exit if shutdown requested
+            if self.shutdown_requested:
+                self.logger.info("Graceful shutdown completed.")
+                break
 
             # Small delay between batches
             time.sleep(1)
@@ -746,6 +838,10 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
     def closed(self, reason):
         """Called when the spider is closed."""
         self.logger.info(f"Parallel spider closed: {reason}")
+        
+        if self.shutdown_requested:
+            self.logger.info("Spider was shut down gracefully via signal (Ctrl+C)")
+        
         self.logger.info(f"Final statistics:")
         self.logger.info(f"  Total URLs processed: {self.total_processed}")
         self.logger.info(f"  Total items yielded: {self.total_items}")
@@ -770,3 +866,14 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
                     )
                 except Exception as e:
                     self.logger.error(f"Error removing pending URLs file: {e}")
+
+    def _setup_signal_handlers(self):
+        """Set up signal handlers for graceful shutdown."""
+        signal.signal(signal.SIGINT, self._handle_signal)
+        signal.signal(signal.SIGTERM, self._handle_signal)
+
+    def _handle_signal(self, signum, frame):
+        """Handle signal for graceful shutdown."""
+        signal_name = "SIGINT" if signum == signal.SIGINT else "SIGTERM"
+        self.logger.info(f"Received {signal_name}. Requesting graceful shutdown...")
+        self.shutdown_requested = True
