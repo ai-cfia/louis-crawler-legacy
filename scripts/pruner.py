@@ -3,8 +3,8 @@ import json
 import shutil
 
 # Set these variables as needed
-tld = '/path/to/source'  # e.g. '/ailab/joseffus/ami/louis-crawler-legacy/storage-guidance-fr'
-dest = '/path/to/output'  # e.g. '/ailab/joseffus/ami/louis-crawler-legacy/pruned-output'
+tld = 'storage-guidance-en'  # e.g. 'storage-guidance-fr'
+dest = 'storage-guidance-en-prune'  # e.g. 'storage-guidance-fr-prune'
 substring = '.ca/en'  # The substring to filter URLs
 
 src_metadata = os.path.join(tld, 'metadata')
