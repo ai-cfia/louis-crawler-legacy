@@ -164,6 +164,6 @@ Cache/
 
 **/**.whl
 
-storage/*
+storage*/
 test_storage/*
 logs/*

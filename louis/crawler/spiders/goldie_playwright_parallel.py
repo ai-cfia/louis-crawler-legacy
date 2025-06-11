@@ -348,7 +348,29 @@ class GoldiePlaywrightParallelSpider(PlaywrightSpider):
 
     name = "goldie_playwright_parallel"
     allowed_domains = ["inspection.gc.ca", "inspection.canada.ca"]
-    start_urls = ["https://inspection.canada.ca/"]
+    start_urls = [
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=0",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=1",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=2",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=3",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=4",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=5",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=6",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=7",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=8",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=9",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=10",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=11",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=12",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=13",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=14",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=15",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=16",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=17",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=18",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=19",
+        "https://inspection.canada.ca/fr/guidance?query=&items_per_page=100&page=20"
+        ]
 
     # Playwright settings specific to this site
     playwright_wait_until = "networkidle"
